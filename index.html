@@ -6,12 +6,32 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <!-- הגדרת אייקון למסך הבית (החלף את הקישור בתמונה שלך) -->
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/192">
-    <link rel="icon" type="image/png" href="https://via.placeholder.com/192">
-
     <title>תפוס'תו!</title>
+    
+    <!-- מניפסט פנימי להתקנה כאפליקציה מלאה במובייל -->
+    <script>
+        const manifestData = {
+            "name": "תפוס'תו!",
+            "short_name": "תפוס'תו",
+            "start_url": "./",
+            "display": "standalone",
+            "background_color": "#0f0f1a",
+            "theme_color": "#0f0f1a",
+            "icons": [{
+                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%231a1a2e'/><circle cx='256' cy='256' r='130' fill='%23ff4757'/><circle cx='256' cy='256' r='90' fill='%23ffffff'/><circle cx='256' cy='256' r='50' fill='%23ff4757'/><circle cx='256' cy='256' r='20' fill='%23ffa502'/></svg>",
+                "sizes": "512x512",
+                "type": "image/svg+xml"
+            }]
+        };
+        const stringManifest = JSON.stringify(manifestData);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(blob);
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = manifestURL;
+        document.head.appendChild(link);
+    </script>
+
     <style>
         * { box-sizing: border-box; touch-action: manipulation; }
         body {
@@ -29,10 +49,8 @@
             text-shadow: 0 2px 10px rgba(255, 71, 87, 0.4);
             margin-bottom: 6px;
         }
-        /* עיצוב לאייקון הלוגו (ניתן להחליף בתמונה משלך) */
-        .game-logo img {
-            width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
-            border: 2px solid #ff4757; box-shadow: 0 0 8px rgba(255, 71, 87, 0.6);
+        .game-logo svg {
+            width: 38px; height: 38px; filter: drop-shadow(0 0 6px rgba(255, 71, 87, 0.6));
         }
         .game-logo span {
             background: linear-gradient(135deg, #ffa502, #ff4757);
@@ -114,33 +132,47 @@
             align-items: center; justify-content: center; z-index: 20; padding: 15px; text-align: center;
             overflow-y: auto;
         }
-        #msg { font-size: 1.4rem; color: #a29bfe; margin-bottom: 4px; }
-        .inst { font-size: 0.75rem; margin-bottom: 10px; color: #b2bec3; line-height: 1.3; }
+        #msg { font-size: 1.3rem; color: #a29bfe; margin-bottom: 4px; }
+        .inst { font-size: 0.72rem; margin-bottom: 8px; color: #b2bec3; line-height: 1.3; }
         
-        .difficulty-selector { display: flex; gap: 8px; margin-bottom: 10px; }
+        .difficulty-selector { display: flex; gap: 6px; margin-bottom: 8px; }
         .diff-btn {
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+            color: #fff; padding: 3px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;
         }
         .diff-btn.active { background: #6c5ce7; border-color: #6c5ce7; }
 
+        /* שדה הזנת שם שחקן מוגבל ל-6 תווים */
+        #player-name {
+            background: rgba(255, 255, 255, 0.1); border: 1px solid #4e4e7a;
+            color: #fff; padding: 5px 10px; border-radius: 6px; font-size: 0.9rem;
+            text-align: center; width: 130px; margin-bottom: 8px; outline: none;
+        }
+
         #leaderboard, #achievements-box {
-            margin-top: 6px; width: 85%; max-width: 250px;
-            background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 5px;
-            display: flex; flex-direction: column; gap: 3px;
+            margin-top: 4px; width: 90%; max-width: 240px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 4px;
+            display: flex; flex-direction: column; gap: 2px;
         }
         .lb-item, .ach-item {
             display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.03);
+            font-size: 0.75rem; padding: 2px 5px; border-radius: 4px; background: rgba(255, 255, 255, 0.03);
         }
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <!-- לוגו המשחק הכולל מקום לאייקון מעוצב משלך -->
+    <!-- לוגו משולב עם אייקון וקטורי מובנה -->
     <div class="game-logo">
-        <img src="https://via.placeholder.com/150" alt="אייקון המשחק"> <span>תפוס'תו!</span> ✨
+        <svg viewBox="0 0 512 512">
+            <circle cx="256" cy="256" r="230" fill="#1a1a2e" stroke="#4e4e7a" stroke-width="20"/>
+            <circle cx="256" cy="256" r="140" fill="#ff4757"/>
+            <circle cx="256" cy="256" r="95" fill="#ffffff"/>
+            <circle cx="256" cy="256" r="50" fill="#ff4757"/>
+            <circle cx="256" cy="256" r="20" fill="#ffa502"/>
+        </svg>
+        <span>תפוס'תו!</span> ✨
     </div>
 
     <div class="dashboard">
@@ -153,8 +185,10 @@
 
     <div id="game-container">
         <div id="overlay">
-            <h1 id="msg" style="margin:0 0 5px 0;">מוכן לאתגר?</h1>
+            <h1 id="msg" style="margin:0 0 4px 0;">מוכן לאתגר?</h1>
             
+            <input type="text" id="player-name" placeholder="שמך (עד 6 תווים)" maxlength="6" value="שחקן">
+
             <div class="difficulty-selector">
                 <button class="diff-btn" onclick="setDiff('easy')">קל 🟢</button>
                 <button class="diff-btn active" onclick="setDiff('normal')">רגיל 🟡</button>
@@ -162,20 +196,19 @@
             </div>
 
             <div class="inst" id="inst-text">
-                🎯 רגילה: +1 | ⭐ קטנה: +3<br>
-                💣 פצצה: -2 | ☢️ פצצה ענקית: איפוס!<br>
-                🐒 קוף שובב: פסילה מיידית!<br>
-                🌟 כוכב אלכסוני מהיר: +10ש' | ⏳ שעון | ⚡ ברק
+                🎯 רגילה: +1 | ⭐ קטנה: +3 | 💣 פצצה: -2<br>
+                ☢️ ענקית: איפוס! | 🐒 קוף: פסילה מיידית!<br>
+                🌟 כוכב מהיר: +10ש' | ⏳ שעון | ⚡ ברק
             </div>
             
-            <button id="start-btn" class="action-btn" style="padding:8px 20px; font-size:1rem; background:#6c5ce7;" onclick="startCountdown()">התחל משחק</button>
+            <button id="start-btn" class="action-btn" style="padding:6px 18px; font-size:0.95rem; background:#6c5ce7;" onclick="startCountdown()">התחל משחק</button>
             
-            <div style="display: flex; gap: 10px; justify-content: center; width: 100%;">
+            <div style="display: flex; gap: 8px; justify-content: center; width: 100%;">
                 <div id="leaderboard"></div>
                 <div id="achievements-box"></div>
             </div>
 
-            <button id="share-btn" class="action-btn" style="display:none; margin-top:8px; background:#00b894;" onclick="shareScore()">📤 שתף תוצאה</button>
+            <button id="share-btn" class="action-btn" style="display:none; margin-top:6px; background:#00b894;" onclick="shareScore()">📤 שתף תוצאה</button>
         </div>
     </div>
 
@@ -197,6 +230,7 @@
         const timerDisplay = document.getElementById('timer-text');
         const overlay = document.getElementById('overlay');
         const msg = document.getElementById('msg');
+        const playerNameInput = document.getElementById('player-name');
         const leaderboard = document.getElementById('leaderboard');
         const achievementsBox = document.getElementById('achievements-box');
         const gameContainer = document.getElementById('game-container');
@@ -265,6 +299,7 @@
             document.body.style.background = "#0f0f1a";
 
             msg.textContent = "מוכן לאתגר?";
+            playerNameInput.style.display = 'block';
             document.getElementById('inst-text').style.display = 'block';
             document.querySelector('.difficulty-selector').style.display = 'flex';
             document.getElementById('start-btn').style.display = 'block';
@@ -277,6 +312,7 @@
 
         async function startCountdown() {
             document.getElementById('start-btn').style.display = 'none';
+            playerNameInput.style.display = 'none';
             document.getElementById('inst-text').style.display = 'none';
             document.querySelector('.difficulty-selector').style.display = 'none';
             leaderboard.innerHTML = '';
@@ -510,7 +546,8 @@
         }
 
         function shareScore() {
-            const shareText = `השגתי ${score} נקודות במשחק "תפוס'תו!" 🎯 תוכלו לעקוף אותי?`;
+            const playerName = playerNameInput.value.trim() || "שחקן";
+            const shareText = `${playerName} השגתי ${score} נקודות במשחק "תפוס'תו!" 🎯 תוכלו לעקוף אותי?`;
             if (navigator.share) {
                 navigator.share({ title: 'תפוס\'תו!', text: shareText }).catch(() => {});
             } else {
@@ -529,13 +566,15 @@
             if (score >= 50) achievements.highRoller = true;
             localStorage.setItem('tupostu_achievements', JSON.stringify(achievements));
 
-            highScores.push(score);
-            highScores.sort((a, b) => b - a);
+            const playerName = (playerNameInput.value.trim() || "שחקן").substring(0, 6);
+            highScores.push({ name: playerName, score: score });
+            highScores.sort((a, b) => b.score - a.score);
             highScores = highScores.slice(0, 3);
             localStorage.setItem('tupostu_scores', JSON.stringify(highScores));
             
             overlay.style.display = 'flex';
             msg.innerHTML = customMsg ? `<span style="color:#ff4757">${customMsg}</span><br>ניקוד: ${score}` : `נגמר! ניקוד: ${score}`;
+            playerNameInput.style.display = 'block';
             document.getElementById('inst-text').style.display = 'block';
             document.querySelector('.difficulty-selector').style.display = 'flex';
             document.getElementById('start-btn').style.display = 'block';
@@ -543,13 +582,13 @@
             shareBtn.style.display = 'block';
             
             const medals = ['🥇', '🥈', '🥉'];
-            let lbHTML = '<div style="font-size:0.75rem; color:#a29bfe; margin-bottom:2px;">🏆 שיאים</div>';
-            highScores.forEach((s, index) => {
-                lbHTML += `<div class="lb-item"><span>${medals[index]}</span> <strong>${s}</strong></div>`;
+            let lbHTML = '<div style="font-size:0.7rem; color:#a29bfe; margin-bottom:2px;">🏆 שיאים</div>';
+            highScores.forEach((item, index) => {
+                lbHTML += `<div class="lb-item"><span>${medals[index]} ${item.name}</span> <strong>${item.score}</strong></div>`;
             });
             leaderboard.innerHTML = lbHTML;
 
-            let achHTML = '<div style="font-size:0.75rem; color:#a29bfe; margin-bottom:2px;">🏅 הישגים</div>';
+            let achHTML = '<div style="font-size:0.7rem; color:#a29bfe; margin-bottom:2px;">🏅 הישגים</div>';
             achHTML += `<div class="ach-item"><span>🌟 כוכב</span> <strong>${achievements.starHunter ? '✅' : '❌'}</strong></div>`;
             achHTML += `<div class="ach-item"><span>🚀 מעל 50</span> <strong>${achievements.highRoller ? '✅' : '❌'}</strong></div>`;
             achievementsBox.innerHTML = achHTML;
