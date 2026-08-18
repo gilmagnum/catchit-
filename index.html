@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- הגדרת אייקון למסך הבית (החלף את הקישור בתמונה שלך) -->
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192">
+    <link rel="icon" type="image/png" href="https://via.placeholder.com/192">
+
+    <title>תפוס'תו!</title>
+    <style>
+        * { box-sizing: border-box; touch-action: manipulation; }
+        body {
+            margin: 0; padding: 0;
+            background: #0f0f1a;
+            color: #e0e0ff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; overflow: hidden; user-select: none;
+        }
+
+        .game-logo {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 1.8rem; font-weight: 800; color: #ff4757;
+            text-shadow: 0 2px 10px rgba(255, 71, 87, 0.4);
+            margin-bottom: 6px;
+        }
+        /* עיצוב לאייקון הלוגו (ניתן להחליף בתמונה משלך) */
+        .game-logo img {
+            width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+            border: 2px solid #ff4757; box-shadow: 0 0 8px rgba(255, 71, 87, 0.6);
+        }
+        .game-logo span {
+            background: linear-gradient(135deg, #ffa502, #ff4757);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .dashboard {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 15px; background: rgba(255, 255, 255, 0.07);
+            padding: 8px 15px; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 450px; width: 90vw; margin-bottom: 8px;
+        }
+
+        .stats { display: flex; gap: 15px; font-size: 1rem; font-weight: 600; }
+        .action-btn {
+            background: #6c5ce7; color: #fff; border: none;
+            padding: 6px 14px; font-size: 0.85rem; font-weight: bold;
+            border-radius: 6px; cursor: pointer; transition: all 0.2s;
+        }
+        .action-btn:active { transform: scale(0.95); }
+
+        #game-container {
+            width: 95vw; max-width: 500px; height: 58vh; max-height: 520px;
+            background: #1a1a2e; border: 3px solid #4e4e7a; border-radius: 20px;
+            position: relative; cursor: crosshair; overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .game-container-freeze {
+            border-color: #74b9ff !important;
+            box-shadow: 0 0 25px rgba(116, 185, 255, 0.8) !important;
+        }
+        .game-container-double {
+            border: 5px double #00cec9 !important;
+            box-shadow: 0 0 25px rgba(0, 206, 201, 0.8) !important;
+        }
+        .game-container-frenzy {
+            animation: borderPulse 0.5s infinite alternate;
+        }
+        @keyframes borderPulse {
+            0% { border-color: #ff4757; box-shadow: 0 0 10px #ff4757; }
+            100% { border-color: #e056fd; box-shadow: 0 0 25px #e056fd; }
+        }
+
+        .target { position: absolute; border-radius: 50%; cursor: pointer; animation: popIn 0.2s forwards; }
+        .normal { width: 60px; height: 60px; background: radial-gradient(circle, #ff4757 30%, #ffffff 30%, #ffffff 50%, #ff4757 50%); box-shadow: 0 0 10px rgba(255, 71, 87, 0.8); }
+        .small { width: 38px; height: 38px; background: radial-gradient(circle, #ffa502 30%, #ffffff 30%, #ffffff 50%, #ffa502 50%); box-shadow: 0 0 10px rgba(255, 165, 2, 0.9); }
+        .bomb { width: 50px; height: 50px; background: #2d3436; border: 2px solid #636e72; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .big-bomb { width: 75px; height: 75px; background: radial-gradient(circle, #e056fd, #be2edd); border: 3px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 35px; box-shadow: 0 0 20px rgba(224, 86, 253, 0.9); }
+        .monkey {
+            width: 55px; height: 55px; background: #d35400; border: 2px solid #e67e22; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 30px; position: absolute;
+            cursor: pointer; box-shadow: 0 0 15px rgba(211, 84, 0, 0.8); animation: popIn 0.2s forwards;
+        }
+
+        .bonus-item {
+            width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+            font-size: 28px; position: absolute; cursor: pointer; border-radius: 50%;
+            background: rgba(255,255,255,0.15); box-shadow: 0 0 12px rgba(255,255,255,0.5);
+            animation: bounce 0.5s alternate infinite;
+        }
+        @keyframes bounce { 0% { transform: scale(1); } 100% { transform: scale(1.15); } }
+
+        .floating-text {
+            position: absolute; font-weight: bold; font-size: 1.1rem; pointer-events: none;
+            animation: floatUp 0.6s forwards; z-index: 10;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
+        }
+
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 15, 26, 0.96); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 20; padding: 15px; text-align: center;
+            overflow-y: auto;
+        }
+        #msg { font-size: 1.4rem; color: #a29bfe; margin-bottom: 4px; }
+        .inst { font-size: 0.75rem; margin-bottom: 10px; color: #b2bec3; line-height: 1.3; }
+        
+        .difficulty-selector { display: flex; gap: 8px; margin-bottom: 10px; }
+        .diff-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+        }
+        .diff-btn.active { background: #6c5ce7; border-color: #6c5ce7; }
+
+        #leaderboard, #achievements-box {
+            margin-top: 6px; width: 85%; max-width: 250px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 5px;
+            display: flex; flex-direction: column; gap: 3px;
+        }
+        .lb-item, .ach-item {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.03);
+        }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <!-- לוגו המשחק הכולל מקום לאייקון מעוצב משלך -->
+    <div class="game-logo">
+        <img src="https://via.placeholder.com/150" alt="אייקון המשחק"> <span>תפוס'תו!</span> ✨
+    </div>
+
+    <div class="dashboard">
+        <div class="stats">
+            <div>ניקוד: <span id="score-text">0</span></div>
+            <div>זמן: <span id="timer-text">30</span>ש'</div>
+        </div>
+        <button class="action-btn" onclick="returnToMenu()">אפס משחק</button>
+    </div>
+
+    <div id="game-container">
+        <div id="overlay">
+            <h1 id="msg" style="margin:0 0 5px 0;">מוכן לאתגר?</h1>
+            
+            <div class="difficulty-selector">
+                <button class="diff-btn" onclick="setDiff('easy')">קל 🟢</button>
+                <button class="diff-btn active" onclick="setDiff('normal')">רגיל 🟡</button>
+                <button class="diff-btn" onclick="setDiff('hard')">קשה 🔴</button>
+            </div>
+
+            <div class="inst" id="inst-text">
+                🎯 רגילה: +1 | ⭐ קטנה: +3<br>
+                💣 פצצה: -2 | ☢️ פצצה ענקית: איפוס!<br>
+                🐒 קוף שובב: פסילה מיידית!<br>
+                🌟 כוכב אלכסוני מהיר: +10ש' | ⏳ שעון | ⚡ ברק
+            </div>
+            
+            <button id="start-btn" class="action-btn" style="padding:8px 20px; font-size:1rem; background:#6c5ce7;" onclick="startCountdown()">התחל משחק</button>
+            
+            <div style="display: flex; gap: 10px; justify-content: center; width: 100%;">
+                <div id="leaderboard"></div>
+                <div id="achievements-box"></div>
+            </div>
+
+            <button id="share-btn" class="action-btn" style="display:none; margin-top:8px; background:#00b894;" onclick="shareScore()">📤 שתף תוצאה</button>
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let score = 0, timeLeft = 30, isPlaying = false, isFrenzy = false;
+        let currentDiff = 'normal';
+        let doublePointsActive = false, timeFrozen = false;
+        let starSpawned = false, clockSpawned = false, lightningSpawned = false, monkeySpawned = false;
+        
+        let highScores = JSON.parse(localStorage.getItem('tupostu_scores')) || [];
+        let achievements = JSON.parse(localStorage.getItem('tupostu_achievements')) || {
+            sniper: false, starHunter: false, highRoller: false
+        };
+
+        let gameLoop = null, targetInterval = null;
+
+        const scoreDisplay = document.getElementById('score-text');
+        const timerDisplay = document.getElementById('timer-text');
+        const overlay = document.getElementById('overlay');
+        const msg = document.getElementById('msg');
+        const leaderboard = document.getElementById('leaderboard');
+        const achievementsBox = document.getElementById('achievements-box');
+        const gameContainer = document.getElementById('game-container');
+        const shareBtn = document.getElementById('share-btn');
+
+        function setDiff(diff) {
+            currentDiff = diff;
+            document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function playTone(type) {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.connect(g); g.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'hit') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'small') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(700, now); osc.frequency.setValueAtTime(1100, now + 0.08);
+                g.gain.setValueAtTime(0.3, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'bomb' || type === 'monkey') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+                g.gain.setValueAtTime(0.4, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'big-bomb') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(120, now); osc.frequency.exponentialRampToValueAtTime(30, now + 0.35);
+                g.gain.setValueAtTime(0.4, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.start(now); osc.stop(now + 0.35);
+            } else if (type === 'powerup') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(1200, now + 0.2);
+                g.gain.setValueAtTime(0.3, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'tick') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(800, now);
+                g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                osc.start(now); osc.stop(now + 0.08);
+            }
+        }
+
+        function showFloatingText(text, x, y, color) {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.textContent = text;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.color = color;
+            gameContainer.appendChild(el);
+            setTimeout(() => el.remove(), 600);
+        }
+
+        function returnToMenu() {
+            isPlaying = false;
+            clearInterval(gameLoop);
+            clearInterval(targetInterval);
+            document.querySelectorAll('.target, .bonus-item, .monkey, .floating-text').forEach(el => el.remove());
+            gameContainer.className = '';
+
+            score = 0; timeLeft = 30;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeLeft;
+            document.body.style.background = "#0f0f1a";
+
+            msg.textContent = "מוכן לאתגר?";
+            document.getElementById('inst-text').style.display = 'block';
+            document.querySelector('.difficulty-selector').style.display = 'flex';
+            document.getElementById('start-btn').style.display = 'block';
+            document.getElementById('start-btn').textContent = 'התחל משחק';
+            leaderboard.innerHTML = '';
+            achievementsBox.innerHTML = '';
+            shareBtn.style.display = 'none';
+            overlay.style.display = 'flex';
+        }
+
+        async function startCountdown() {
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('inst-text').style.display = 'none';
+            document.querySelector('.difficulty-selector').style.display = 'none';
+            leaderboard.innerHTML = '';
+            achievementsBox.innerHTML = '';
+            shareBtn.style.display = 'none';
+
+            for (let i = 3; i > 0; i--) {
+                msg.textContent = i;
+                playTone('tick');
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            startGame();
+        }
+
+        function startGame() {
+            clearInterval(gameLoop);
+            clearInterval(targetInterval);
+            document.querySelectorAll('.target, .bonus-item, .monkey, .floating-text').forEach(el => el.remove());
+            gameContainer.className = '';
+
+            score = 0; 
+            timeLeft = currentDiff === 'easy' ? 40 : (currentDiff === 'hard' ? 20 : 30);
+            isPlaying = true; isFrenzy = false; doublePointsActive = false; timeFrozen = false;
+            starSpawned = false; clockSpawned = false; lightningSpawned = false; monkeySpawned = false;
+
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeLeft;
+            overlay.style.display = 'none';
+            document.body.style.background = "#0f0f1a";
+            
+            gameLoop = setInterval(() => {
+                if (!timeFrozen) {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                }
+
+                if (timeLeft === 22 && !monkeySpawned) spawnMonkey();
+                if (timeLeft === 18 && !starSpawned) spawnFastLongDiagonalStar();
+                if (timeLeft === 12 && !clockSpawned) spawnBonusItem('clock', '⏳');
+                if (timeLeft === 8 && !lightningSpawned) spawnBonusItem('lightning', '⚡');
+
+                if (timeLeft === 5) {
+                    isFrenzy = true;
+                    gameContainer.classList.add('game-container-frenzy');
+                }
+                if (timeLeft > 0 && timeLeft <= 5) playTone('tick');
+                if (timeLeft <= 0) { clearInterval(gameLoop); clearInterval(targetInterval); endGame(); }
+            }, 1000);
+
+            let intervalTime = currentDiff === 'easy' ? 1000 : (currentDiff === 'hard' ? 600 : 800);
+            spawnTarget();
+            targetInterval = setInterval(spawnTarget, intervalTime);
+        }
+
+        function spawnTarget() {
+            if (!isPlaying) return;
+            const target = document.createElement('div');
+            target.className = 'target';
+            let pts = 1, size = 60, sound = 'hit';
+
+            let bombChance = currentDiff === 'hard' ? 0.3 : 0.15;
+            let smallChance = currentDiff === 'hard' ? 0.25 : 0.2;
+
+            const rand = Math.random();
+            if (rand < smallChance) { 
+                target.classList.add('small'); pts = 3; size = 38; sound = 'small'; 
+            } else if (rand < smallChance + bombChance) { 
+                target.classList.add('bomb'); target.innerHTML = '💣'; pts = -2; size = 50; sound = 'bomb'; 
+            } else if (rand < smallChance + bombChance + 0.05) { 
+                target.classList.add('big-bomb'); target.innerHTML = '☢️'; pts = 'reset'; size = 75; sound = 'big-bomb'; 
+            } else { 
+                target.classList.add('normal'); 
+            }
+
+            let multiplier = (isFrenzy || doublePointsActive) ? 2 : 1;
+            if (pts !== 'reset' && pts > 0) pts *= multiplier;
+
+            const rect = gameContainer.getBoundingClientRect();
+            let posX = Math.max(0, Math.random() * (rect.width - size));
+            let posY = Math.max(0, Math.random() * (rect.height - size));
+            target.style.left = posX + 'px';
+            target.style.top = posY + 'px';
+
+            target.onpointerdown = (e) => {
+                const clientX = e.clientX || (e.touches ? e.touches[0].clientX : posX);
+                const clientY = e.clientY || (e.touches ? e.touches[0].clientY : posY);
+                const relX = clientX - rect.left;
+                const relY = clientY - rect.top;
+
+                if (pts === 'reset') {
+                    score = 0;
+                    showFloatingText('איפוס!', relX, relY, '#ff4757');
+                } else {
+                    score += pts;
+                    let color = pts > 0 ? (doublePointsActive ? '#00cec9' : '#55efc4') : '#ff7675';
+                    showFloatingText((pts > 0 ? '+' : '') + pts, relX, relY, color);
+                }
+
+                scoreDisplay.textContent = score;
+                playTone(sound);
+                target.remove();
+            };
+
+            gameContainer.appendChild(target);
+            let lifespan = currentDiff === 'hard' ? 900 : 1200;
+            setTimeout(() => { if (target.parentElement) target.remove(); }, isFrenzy ? 500 : lifespan);
+        }
+
+        function spawnMonkey() {
+            if (!isPlaying) return;
+            monkeySpawned = true;
+            const monkey = document.createElement('div');
+            monkey.className = 'monkey';
+            monkey.innerHTML = '🐒';
+
+            const rect = gameContainer.getBoundingClientRect();
+            let posX = Math.max(0, Math.random() * (rect.width - 55));
+            let posY = Math.max(0, Math.random() * (rect.height - 55));
+            monkey.style.left = posX + 'px';
+            monkey.style.top = posY + 'px';
+
+            monkey.onpointerdown = (e) => {
+                e.stopPropagation();
+                playTone('monkey');
+                monkey.remove();
+                endGame("תפסת קוף! הפסדת!");
+            };
+
+            gameContainer.appendChild(monkey);
+            setTimeout(() => { if (monkey.parentElement) monkey.remove(); }, 2000);
+        }
+
+        function spawnFastLongDiagonalStar() {
+            if (!isPlaying) return;
+            starSpawned = true;
+            const star = document.createElement('div');
+            star.className = 'bonus-item';
+            star.innerHTML = '🌟';
+
+            const rect = gameContainer.getBoundingClientRect();
+            let isLeftToRight = Math.random() < 0.5;
+            
+            let posX = isLeftToRight ? 0 : rect.width - 50;
+            let posY = 0;
+            
+            star.style.left = posX + 'px';
+            star.style.top = posY + 'px';
+
+            let speedX = isLeftToRight ? 8 : -8;
+            let speedY = 10;
+
+            const diagonalInterval = setInterval(() => {
+                if (!star.parentElement || !isPlaying) { clearInterval(diagonalInterval); return; }
+                
+                posX += speedX;
+                posY += speedY;
+
+                star.style.left = posX + 'px';
+                star.style.top = posY + 'px';
+
+                if (posY > rect.height || posX < -50 || posX > rect.width) {
+                    clearInterval(diagonalInterval);
+                    if (star.parentElement) star.remove();
+                }
+            }, 20);
+
+            star.onpointerdown = (e) => {
+                e.stopPropagation();
+                clearInterval(diagonalInterval);
+                playTone('powerup');
+                
+                const relX = e.clientX - rect.left;
+                const relY = e.clientY - rect.top;
+
+                timeLeft += 10;
+                timerDisplay.textContent = timeLeft;
+                showFloatingText('+10 שניות!', relX, relY, '#fdcb6e');
+                achievements.starHunter = true;
+
+                star.remove();
+            };
+
+            gameContainer.appendChild(star);
+        }
+
+        function spawnBonusItem(type, emoji) {
+            if (!isPlaying) return;
+            if (type === 'clock') clockSpawned = true;
+            if (type === 'lightning') lightningSpawned = true;
+
+            const item = document.createElement('div');
+            item.className = 'bonus-item';
+            item.innerHTML = emoji;
+
+            const rect = gameContainer.getBoundingClientRect();
+            let posX = Math.random() * (rect.width - 50);
+            let posY = Math.random() * (rect.height - 50);
+            item.style.left = posX + 'px';
+            item.style.top = posY + 'px';
+
+            item.onpointerdown = (e) => {
+                e.stopPropagation();
+                playTone('powerup');
+                
+                const relX = e.clientX - rect.left;
+                const relY = e.clientY - rect.top;
+
+                if (type === 'clock') {
+                    timeFrozen = true;
+                    gameContainer.classList.add('game-container-freeze');
+                    showFloatingText('הקפאת זמן! ⏳', relX, relY, '#74b9ff');
+                    setTimeout(() => {
+                        timeFrozen = false;
+                        gameContainer.classList.remove('game-container-freeze');
+                    }, 3000);
+                } else if (type === 'lightning') {
+                    doublePointsActive = true;
+                    gameContainer.classList.add('game-container-double');
+                    showFloatingText('נקודות כפולות! x2', relX, relY, '#00cec9');
+                    setTimeout(() => {
+                        doublePointsActive = false;
+                        gameContainer.classList.remove('game-container-double');
+                    }, 4000);
+                }
+
+                item.remove();
+            };
+
+            gameContainer.appendChild(item);
+            setTimeout(() => { if (item.parentElement) item.remove(); }, 2000);
+        }
+
+        function shareScore() {
+            const shareText = `השגתי ${score} נקודות במשחק "תפוס'תו!" 🎯 תוכלו לעקוף אותי?`;
+            if (navigator.share) {
+                navigator.share({ title: 'תפוס\'תו!', text: shareText }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(shareText);
+                alert("התוצאה הועתקה ללוח!");
+            }
+        }
+
+        function endGame(customMsg = null) {
+            isPlaying = false;
+            clearInterval(gameLoop);
+            clearInterval(targetInterval);
+            document.querySelectorAll('.target, .bonus-item, .monkey, .floating-text').forEach(el => el.remove());
+            gameContainer.className = '';
+
+            if (score >= 50) achievements.highRoller = true;
+            localStorage.setItem('tupostu_achievements', JSON.stringify(achievements));
+
+            highScores.push(score);
+            highScores.sort((a, b) => b - a);
+            highScores = highScores.slice(0, 3);
+            localStorage.setItem('tupostu_scores', JSON.stringify(highScores));
+            
+            overlay.style.display = 'flex';
+            msg.innerHTML = customMsg ? `<span style="color:#ff4757">${customMsg}</span><br>ניקוד: ${score}` : `נגמר! ניקוד: ${score}`;
+            document.getElementById('inst-text').style.display = 'block';
+            document.querySelector('.difficulty-selector').style.display = 'flex';
+            document.getElementById('start-btn').style.display = 'block';
+            document.getElementById('start-btn').textContent = 'שחק שוב';
+            shareBtn.style.display = 'block';
+            
+            const medals = ['🥇', '🥈', '🥉'];
+            let lbHTML = '<div style="font-size:0.75rem; color:#a29bfe; margin-bottom:2px;">🏆 שיאים</div>';
+            highScores.forEach((s, index) => {
+                lbHTML += `<div class="lb-item"><span>${medals[index]}</span> <strong>${s}</strong></div>`;
+            });
+            leaderboard.innerHTML = lbHTML;
+
+            let achHTML = '<div style="font-size:0.75rem; color:#a29bfe; margin-bottom:2px;">🏅 הישגים</div>';
+            achHTML += `<div class="ach-item"><span>🌟 כוכב</span> <strong>${achievements.starHunter ? '✅' : '❌'}</strong></div>`;
+            achHTML += `<div class="ach-item"><span>🚀 מעל 50</span> <strong>${achievements.highRoller ? '✅' : '❌'}</strong></div>`;
+            achievementsBox.innerHTML = achHTML;
+        }
+    </script>
+</body>
+</html>
