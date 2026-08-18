@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>תפוס'תו!</title>
     
-    <!-- מניפסט מובנה מלא להתקנת PWA אמיתית במובייל -->
     <script>
         const manifestData = {
             "name": "תפוס'תו!",
@@ -69,6 +68,7 @@
             background: #6c5ce7; color: #fff; border: none;
             padding: 6px 14px; font-size: 0.85rem; font-weight: bold;
             border-radius: 6px; cursor: pointer; transition: all 0.2s;
+            z-index: 30; position: relative;
         }
         .action-btn:active { transform: scale(0.95); }
 
@@ -133,16 +133,15 @@
         #msg { font-size: 1.2rem; color: #a29bfe; margin-bottom: 4px; }
         .inst { font-size: 0.7rem; margin-bottom: 8px; color: #b2bec3; line-height: 1.3; }
         
-        .difficulty-selector { display: flex; gap: 6px; margin-bottom: 8px; }
+        .difficulty-selector { display: flex; gap: 6px; margin-bottom: 8px; z-index: 30; position: relative; }
         .diff-btn {
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
             color: #fff; padding: 3px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;
         }
         .diff-btn.active { background: #6c5ce7; border-color: #6c5ce7; }
 
-        /* שדה הזנת שם שחקן (יופיע רק בשבירת שיא) */
         #name-container {
-            display: none; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 8px;
+            display: none; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 8px; z-index: 30; position: relative;
         }
         #player-name {
             background: rgba(255, 255, 255, 0.1); border: 1px solid #4e4e7a;
@@ -188,7 +187,6 @@
         <div id="overlay">
             <h1 id="msg" style="margin:0 0 4px 0;">מוכן לאתגר?</h1>
             
-            <!-- אזור הזנת שם שיופיע רק בשבירת שיא -->
             <div id="name-container">
                 <span class="name-label">🎉 שברת שיא! הכנס שמך (עד 6 תווים):</span>
                 <input type="text" id="player-name" maxlength="6" placeholder="השם שלך">
@@ -311,19 +309,16 @@
             nameContainer.style.display = 'none';
             diffSelector.style.display = 'flex';
             document.getElementById('inst-text').style.display = 'block';
-            startbtnDisplay(true);
+            startBtn.style.display = 'block';
+            startBtn.textContent = 'התחל משחק';
             leaderboard.innerHTML = '';
             achievementsBox.innerHTML = '';
             shareBtn.style.display = 'none';
             overlay.style.display = 'flex';
         }
 
-        function startbtnDisplay(show) {
-            startBtn.style.display = show ? 'block' : 'none';
-        }
-
         async function startCountdown() {
-            startbtnDisplay(false);
+            startBtn.style.display = 'none';
             nameContainer.style.display = 'none';
             document.getElementById('inst-text').style.display = 'none';
             diffSelector.style.display = 'none';
@@ -584,7 +579,8 @@
             localStorage.setItem('tupostu_scores', JSON.stringify(highScores));
 
             nameContainer.style.display = 'none';
-            startbtnDisplay(true);
+            startBtn.style.display = 'block';
+            startBtn.textContent = 'שחק שוב';
             updateLeaderboardUI();
         }
 
@@ -592,7 +588,7 @@
             const medals = ['🥇', '🥈', '🥉'];
             let lbHTML = '<div style="font-size:0.7rem; color:#a29bfe; margin-bottom:2px;">🏆 שיאים</div>';
             highScores.forEach((item, index) => {
-                lbHTML += `<div class="lb-item"><span>${medals[index]} ${.name || item.name} ${item.diff || '🟡'}</span> <strong>${item.score}</strong></div>`;
+                lbHTML += `<div class="lb-item"><span>${medals[index]} ${item.name} ${item.diff || '🟡'}</span> <strong>${item.score}</strong></div>`;
             });
             leaderboard.innerHTML = lbHTML;
         }
@@ -618,11 +614,11 @@
 
             if (isNewHigh) {
                 nameContainer.style.display = 'flex';
-                startbtnDisplay(false);
+                startBtn.style.display = 'none';
                 playerNameInput.value = '';
             } else {
                 nameContainer.style.display = 'none';
-                startbtnDisplay(true);
+                startBtn.style.display = 'block';
                 startBtn.textContent = 'שחק שוב';
             }
 
