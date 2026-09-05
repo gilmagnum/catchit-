@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -161,6 +161,36 @@
         }
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
     </style>
+<!-- arcaide-leaderboard -->
+<script src="https://gilmagnum.github.io/games/config.js"></script>
+<script src="https://gilmagnum.github.io/games/leaderboard.js"></script>
+<style>
+  .lb-btn{padding:5px 14px;border:1px solid rgba(255,255,255,.22);border-radius:10px;
+    background:rgba(255,255,255,.09);color:#fff;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer}
+  .lb-btn:hover{background:rgba(255,255,255,.18)}
+  .lb-home{font-size:.72rem;color:rgba(255,255,255,.55);text-decoration:none;align-self:center}
+  .lb-home:hover{color:#fff}
+  .lb-row{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:6px;flex-wrap:wrap}
+/* ===== arcaide-responsive ===== */
+body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+#leaderboard, #achievements-box { min-height: 0; }
+@media (max-height: 560px) {
+  h1#msg { font-size: 1.1rem; }
+  .inst { font-size: .62rem; line-height: 1.35; }
+  .lb-row { margin-top: 3px; }
+  .lb-btn { padding: 4px 10px; font-size: .72rem; }
+}
+</style>
+<!-- arcaide-pwa: installable to the home screen -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<meta name="theme-color" content="#0f0f1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="תפוס'תו!">
 </head>
 <body>
 
@@ -212,7 +242,11 @@
                 <div id="achievements-box"></div>
             </div>
 
-            <button id="share-btn" class="action-btn" style="display:none; margin-top:6px; background:#00b894;" onclick="shareScore()">📤 שתף תוצאה</button>
+            <div class="lb-row">
+                <button id="share-btn" class="action-btn" style="display:none; background:#00b894;" onclick="shareScore()">📤 שתף תוצאה</button>
+                <button class="lb-btn" id="btn-scores">🏆 שיאים גלובליים</button>
+                <a class="lb-home" href="https://gilmagnum.github.io/games/">← כל המשחקים</a>
+            </div>
         </div>
     </div>
 
@@ -246,7 +280,11 @@
         function setDiff(diff) {
             currentDiff = diff;
             document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            if (typeof event !== 'undefined' && event && event.target) event.target.classList.add('active');
+            if (window.Leaderboard) {
+                Leaderboard.setGame('catchit-' + diff);
+                updateLeaderboardUI();
+            }
         }
 
         function playTone(type) {
@@ -564,6 +602,24 @@
 
         let pendingScore = null;
 
+        // ArcAIde global leaderboard
+        if (window.Leaderboard) {
+            Leaderboard.init({
+                game: 'catchit-normal',
+                title: "תפוס'תו!",
+                scoreLabel: 'נקודות',
+                variants: [
+                    { slug: 'catchit-easy',   label: '🟢 קל' },
+                    { slug: 'catchit-normal', label: '🟡 רגיל' },
+                    { slug: 'catchit-hard',   label: '🔴 קשה' }
+                ]
+            });
+            document.getElementById('btn-scores').addEventListener('click', () => Leaderboard.show());
+            updateLeaderboardUI();
+        } else {
+            document.getElementById('btn-scores').style.display = 'none';
+        }
+
         function checkIsHighScore(s) {
             if (highScores.length < 3) return true;
             return s > highScores[highScores.length - 1].score;
@@ -584,13 +640,37 @@
             updateLeaderboardUI();
         }
 
-        function updateLeaderboardUI() {
+        const DIFF_ICONS = { easy: '🟢', normal: '🟡', hard: '🔴' };
+
+        function renderLocalBoard() {
             const medals = ['🥇', '🥈', '🥉'];
-            let lbHTML = '<div style="font-size:0.7rem; color:#a29bfe; margin-bottom:2px;">🏆 שיאים</div>';
+            let lbHTML = '<div style="font-size:0.7rem; color:#a29bfe; margin-bottom:2px;">🏆 שיאים שלי</div>';
+            if (!highScores.length) lbHTML += '<div class="lb-item"><span>עוד אין</span></div>';
             highScores.forEach((item, index) => {
                 lbHTML += `<div class="lb-item"><span>${medals[index]} ${item.name} ${item.diff || '🟡'}</span> <strong>${item.score}</strong></div>`;
             });
             leaderboard.innerHTML = lbHTML;
+        }
+
+        // Shows the GLOBAL top 3 for the selected difficulty, falling back to
+        // the local top 3 when there is no connection.
+        function updateLeaderboardUI() {
+            renderLocalBoard();
+            if (!window.Leaderboard) return;
+            const medals = ['🥇', '🥈', '🥉'];
+            const diff = currentDiff;
+            Leaderboard.top(3).then(rows => {
+                if (diff !== currentDiff) return;   // user switched meanwhile
+                let html = `<div style="font-size:0.7rem; color:#a29bfe; margin-bottom:2px;">🌍 שיאים ${DIFF_ICONS[diff]}</div>`;
+                if (!rows || !rows.length) {
+                    html += '<div class="lb-item"><span style="font-size:.7rem">הלוח פתוח — תפוס ראשון</span></div>';
+                } else {
+                    rows.forEach((r, i) => {
+                        html += `<div class="lb-item"><span>${medals[i]} ${r.player}</span> <strong>${r.score}</strong></div>`;
+                    });
+                }
+                leaderboard.innerHTML = html;
+            }).catch(() => {});
         }
 
         function endGame(customMsg = null) {
@@ -612,17 +692,27 @@
             diffSelector.style.display = 'flex';
             shareBtn.style.display = 'block';
 
+            nameContainer.style.display = 'none';
+            startBtn.style.display = 'block';
+            startBtn.textContent = 'שחק שוב';
+
             if (isNewHigh) {
-                nameContainer.style.display = 'flex';
-                startBtn.style.display = 'none';
-                playerNameInput.value = '';
-            } else {
-                nameContainer.style.display = 'none';
-                startBtn.style.display = 'block';
-                startBtn.textContent = 'שחק שוב';
+                const name = (Leaderboard && Leaderboard.playerName()) || 'שחקן';
+                highScores.push({ name: name.substring(0, 6), score: score, diff: DIFF_ICONS[currentDiff] });
+                highScores.sort((a, b) => b.score - a.score);
+                highScores = highScores.slice(0, 3);
+                localStorage.setItem('tupostu_scores', JSON.stringify(highScores));
             }
 
             updateLeaderboardUI();
+
+            // ArcAIde global leaderboard — prompts for a name on a new record
+            if (window.Leaderboard) {
+                setTimeout(() => {
+                    Leaderboard.gameOver(score, { diff: currentDiff })
+                        .then(() => updateLeaderboardUI());
+                }, 700);
+            }
 
             let achHTML = '<div style="font-size:0.7rem; color:#a29bfe; margin-bottom:2px;">🏅 הישגים</div>';
             achHTML += `<div class="ach-item"><span>🌟 כוכב</span> <strong>${achievements.starHunter ? '✅' : '❌'}</strong></div>`;
