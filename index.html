@@ -6,28 +6,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>תפוס'תו!</title>
+    <title>תפוס'תו! · arcAId</title>
     
-    <script>
-        const manifestData = {
-            "name": "תפוס'תו!",
-            "short_name": "תפוס'תו",
-            "start_url": "./",
-            "display": "standalone",
-            "background_color": "#0f0f1a",
-            "theme_color": "#0f0f1a",
-            "icons": [{
-                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%231a1a2e'/><circle cx='256' cy='256' r='130' fill='%23ff4757'/><circle cx='256' cy='256' r='90' fill='%23ffffff'/><circle cx='256' cy='256' r='50' fill='%23ff4757'/><circle cx='256' cy='256' r='20' fill='%23ffa502'/></svg>",
-                "sizes": "512x512",
-                "type": "image/svg+xml"
-            }]
-        };
-        const blob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
-        const link = document.createElement('link');
-        link.rel = 'manifest';
-        link.href = URL.createObjectURL(blob);
-        document.head.appendChild(link);
-    </script>
 
     <style>
         * { box-sizing: border-box; touch-action: manipulation; }
@@ -171,6 +151,11 @@
   .lb-home{font-size:.72rem;color:rgba(255,255,255,.55);text-decoration:none;align-self:center}
   .lb-home:hover{color:#fff}
   .lb-row{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:6px;flex-wrap:wrap}
+  /* arcaide-bar */
+  #game-container.paused *{animation-play-state:paused!important;transition:none!important}
+  #paused-veil{position:absolute;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
+    background:rgba(8,8,20,.66);backdrop-filter:blur(2px);font-size:1.1rem;font-weight:700;color:#e0e0ff}
+  #game-container.paused #paused-veil{display:flex}
 /* ===== arcaide-responsive ===== */
 body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
 #leaderboard, #achievements-box { min-height: 0; }
@@ -180,6 +165,12 @@ body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inse
   .lb-row { margin-top: 3px; }
   .lb-btn { padding: 4px 10px; font-size: .72rem; }
 }
+
+/* ===== arcaide-theme: light chrome around the play area ===== */
+html[data-arcade-theme="light"] body{ background:#eef1fa; color:#1b2540; }
+html[data-arcade-theme="light"] .stats-bar{background:rgba(31,43,61,.06);color:#1b2540}
+html[data-arcade-theme="light"] .inst{color:#4d5b7d}
+html[data-arcade-theme="light"] #game-container{border-color:rgba(31,43,61,.18)}
 </style>
 <!-- arcaide-pwa: installable to the home screen -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -214,6 +205,7 @@ body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inse
     </div>
 
     <div id="game-container">
+        <div id="paused-veil">⏸️ מושהה</div>
         <div id="overlay">
             <h1 id="msg" style="margin:0 0 4px 0;">מוכן לאתגר?</h1>
             
@@ -263,6 +255,7 @@ body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inse
         };
 
         let gameLoop = null, targetInterval = null;
+        let isPaused = false, soundOn = true;   // arcaide-bar
 
         const scoreDisplay = document.getElementById('score-text');
         const timerDisplay = document.getElementById('timer-text');
@@ -288,6 +281,7 @@ body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inse
         }
 
         function playTone(type) {
+            if (!soundOn) return;
             const osc = audioCtx.createOscillator();
             const g = audioCtx.createGain();
             osc.connect(g); g.connect(audioCtx.destination);
@@ -389,6 +383,7 @@ body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inse
             document.body.style.background = "#0f0f1a";
             
             gameLoop = setInterval(() => {
+                if (isPaused) return;
                 if (!timeFrozen) {
                     timeLeft--;
                     timerDisplay.textContent = timeLeft;
@@ -413,7 +408,7 @@ body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inse
         }
 
         function spawnTarget() {
-            if (!isPlaying) return;
+            if (!isPlaying || isPaused) return;
             const target = document.createElement('div');
             target.className = 'target';
             let pts = 1, size = 60, sound = 'hit';
@@ -602,7 +597,16 @@ body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inse
 
         let pendingScore = null;
 
-        // ArcAIde global leaderboard
+        // arcAId global leaderboard
+        if (window.Arcade) {
+            Arcade.controls({
+                onPause:   function () { isPaused = true;  gameContainer.classList.add('paused'); },
+                onResume:  function () { isPaused = false; gameContainer.classList.remove('paused'); },
+                onRestart: function () { isPaused = false; gameContainer.classList.remove('paused'); startGame(); },
+                onMute:    function (m) { soundOn = !m; },
+                theme: true
+            });
+        }
         if (window.Leaderboard) {
             Leaderboard.init({
                 game: 'catchit-normal',
@@ -706,7 +710,7 @@ body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inse
 
             updateLeaderboardUI();
 
-            // ArcAIde global leaderboard — prompts for a name on a new record
+            // arcAId global leaderboard — prompts for a name on a new record
             if (window.Leaderboard) {
                 setTimeout(() => {
                     Leaderboard.gameOver(score, { diff: currentDiff })
