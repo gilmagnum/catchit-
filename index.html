@@ -143,8 +143,8 @@
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
     </style>
 <!-- arcaide-leaderboard -->
-<script src="https://gilmagnum.github.io/games/config.js"></script>
-<script src="https://gilmagnum.github.io/games/leaderboard.js"></script>
+<script src="https://gilmagnum.github.io/games/config.js?v=4"></script>
+<script src="https://gilmagnum.github.io/games/leaderboard.js?v=4"></script>
 <style>
   .lb-btn{padding:5px 14px;border:1px solid rgba(255,255,255,.22);border-radius:10px;
     background:rgba(255,255,255,.09);color:#fff;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer}
@@ -351,7 +351,7 @@ html[data-arcade-theme="light"] #game-container{border-color:rgba(31,43,61,.18)}
         }
 
         async function startCountdown() {
-            if (window.Leaderboard) Leaderboard.cancelPending();   // the countdown already counts as a new round
+            if (window.Leaderboard && Leaderboard.cancelPending) Leaderboard.cancelPending();   // the countdown already counts as a new round
             startBtn.style.display = 'none';
             nameContainer.style.display = 'none';
             document.getElementById('inst-text').style.display = 'none';
@@ -381,7 +381,7 @@ html[data-arcade-theme="light"] #game-container{border-color:rgba(31,43,61,.18)}
         });
 
         function startGame() {
-            if (window.Leaderboard) Leaderboard.cancelPending();   // a new round drops the old run's panel
+            if (window.Leaderboard && Leaderboard.cancelPending) Leaderboard.cancelPending();   // a new round drops the old run's panel
 
             clearInterval(gameLoop);
             clearInterval(targetInterval);
@@ -728,7 +728,7 @@ html[data-arcade-theme="light"] #game-container{border-color:rgba(31,43,61,.18)}
 
             // arcAId global leaderboard — prompts for a name on a new record
             if (window.Leaderboard) {
-                Leaderboard.gameOverIn(700, score, { diff: currentDiff });
+                (Leaderboard.gameOverIn ? Leaderboard.gameOverIn(700, score, { diff: currentDiff }) : setTimeout(function(){ Leaderboard.gameOver(score, { diff: currentDiff }); }, 700));
             }
 
             let achHTML = '<div style="font-size:0.7rem; color:#a29bfe; margin-bottom:2px;">🏅 הישגים</div>';
