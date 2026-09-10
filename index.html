@@ -351,6 +351,7 @@ html[data-arcade-theme="light"] #game-container{border-color:rgba(31,43,61,.18)}
         }
 
         async function startCountdown() {
+            if (window.Leaderboard) Leaderboard.cancelPending();   // the countdown already counts as a new round
             startBtn.style.display = 'none';
             nameContainer.style.display = 'none';
             document.getElementById('inst-text').style.display = 'none';
@@ -360,14 +361,28 @@ html[data-arcade-theme="light"] #game-container{border-color:rgba(31,43,61,.18)}
             shareBtn.style.display = 'none';
 
             for (let i = 3; i > 0; i--) {
+                while (isPaused) await new Promise(r => setTimeout(r, 120));   // paused counts down nothing
                 msg.textContent = i;
                 playTone('tick');
                 await new Promise(r => setTimeout(r, 1000));
             }
+            while (isPaused) await new Promise(r => setTimeout(r, 120));
             startGame();
         }
 
+        // the round must not drain while the tab is in the background
+        let autoPaused = false;
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (!isPaused) { autoPaused = true; isPaused = true; gameContainer.classList.add('paused'); if (window.Arcade) Arcade.setPaused(true); }
+            } else if (autoPaused) {
+                autoPaused = false; isPaused = false; gameContainer.classList.remove('paused'); if (window.Arcade) Arcade.setPaused(false);
+            }
+        });
+
         function startGame() {
+            if (window.Leaderboard) Leaderboard.cancelPending();   // a new round drops the old run's panel
+
             clearInterval(gameLoop);
             clearInterval(targetInterval);
             document.querySelectorAll('.target, .bonus-item, .monkey, .floating-text').forEach(el => el.remove());
@@ -713,10 +728,7 @@ html[data-arcade-theme="light"] #game-container{border-color:rgba(31,43,61,.18)}
 
             // arcAId global leaderboard — prompts for a name on a new record
             if (window.Leaderboard) {
-                setTimeout(() => {
-                    Leaderboard.gameOver(score, { diff: currentDiff })
-                        .then(() => updateLeaderboardUI());
-                }, 700);
+                Leaderboard.gameOverIn(700, score, { diff: currentDiff });
             }
 
             let achHTML = '<div style="font-size:0.7rem; color:#a29bfe; margin-bottom:2px;">🏅 הישגים</div>';
